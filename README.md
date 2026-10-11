@@ -59,7 +59,7 @@ python manage.py runserver
 
 Open <http://127.0.0.1:8000/> to create a student account. The admin dashboard is at <http://127.0.0.1:8000/admin/>; use the superuser created above to add colleges and verified cutoff records.
 
-The settings use a local-only development key while `DJANGO_DEBUG` is enabled. Before deployment, set a secret `DJANGO_SECRET_KEY`, set `DJANGO_DEBUG=False`, and set `DJANGO_ALLOWED_HOSTS` to a comma-separated list of the deployment's hostnames. The app refuses to start with debug disabled if no secret key is configured.
+The settings use a local-only development key while `DJANGO_DEBUG` is enabled. Before deployment, set a secret `DJANGO_SECRET_KEY` and set `DJANGO_DEBUG=False`. The Vercel production hostname `vh-21-15-techno-coder.vercel.app` and Vercel-provided deployment hostnames are allowed automatically; add any custom domains to `DJANGO_ALLOWED_HOSTS` as a comma-separated list. Redeploy after changing the settings or deployment environment. The app refuses to start with debug disabled if no secret key is configured.
 
 ## Importing verified cutoff CSV data
 
@@ -118,7 +118,3 @@ collegepro/       Django project settings and root URL configuration
 manage.py         Django management entry point
 requirements.txt  Python dependencies
 ```
-
-## Project team
-
-Techno Coders
