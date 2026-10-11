@@ -96,9 +96,9 @@ class Command(BaseCommand):
             raise ValueError("percentile cutoffs must not exceed 100")
         if score_basis == "rank" and cutoff_score < 1:
             raise ValueError("rank cutoffs must be at least 1")
-        if cutoff_score != cutoff_score.quantize(Decimal("0.001")):
-            raise ValueError("cutoff_score supports at most 3 decimal places")
-        if cutoff_score >= Decimal("10000000"):
+        if cutoff_score != cutoff_score.quantize(Decimal("0.0000001")):
+            raise ValueError("cutoff_score supports at most 7 decimal places")
+        if cutoff_score >= Decimal("100000000"):
             raise ValueError("cutoff_score exceeds the supported range")
         cutoff_round = int(self._text(row, "cap_round"))
         if cutoff_round < 1 or cutoff_round > 32767:

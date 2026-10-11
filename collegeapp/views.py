@@ -5,7 +5,13 @@ from django.contrib.auth.views import LoginView, LogoutView
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_http_methods
 
-from .forms import RecommendationFilterForm, SignUpForm, StudentProfileForm
+from .forms import (
+    ENGINEERING_BRANCHES,
+    MAHARASHTRA_CITIES,
+    RecommendationFilterForm,
+    SignUpForm,
+    StudentProfileForm,
+)
 from .models import College, Cutoff, StudentProfile
 from .services import get_recommendations
 
@@ -54,7 +60,15 @@ def index(request):
         student_profile.save()
         messages.success(request, "Your profile has been saved.")
         return redirect("results")
-    return render(request, "index.html", {"form": form})
+    return render(
+        request,
+        "index.html",
+        {
+            "form": form,
+            "cities": MAHARASHTRA_CITIES,
+            "branches": ENGINEERING_BRANCHES,
+        },
+    )
 
 
 @login_required

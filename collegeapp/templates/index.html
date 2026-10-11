@@ -16,6 +16,15 @@
                         <div class="mb-3">
                             <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
                             {{ field }}
+                            {% if field.name == "city" %}
+                                <datalist id="maharashtra-cities">
+                                    {% for city in cities %}<option value="{{ city }}">{% endfor %}
+                                </datalist>
+                            {% elif field.name == "preferred_branch" %}
+                                <datalist id="engineering-branches">
+                                    {% for branch in branches %}<option value="{{ branch }}">{% endfor %}
+                                </datalist>
+                            {% endif %}
                             {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
                             {% for error in field.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
                         </div>

@@ -5,6 +5,41 @@ from django.contrib.auth.models import User
 from .models import StudentProfile
 
 
+MAHARASHTRA_CITIES = (
+    "Pune",
+    "Mumbai",
+    "Nagpur",
+    "Nashik",
+    "Thane",
+    "Navi Mumbai",
+    "Chhatrapati Sambhajinagar",
+    "Kolhapur",
+    "Amravati",
+    "Solapur",
+    "Jalgaon",
+    "Akola",
+    "Ahilyanagar",
+)
+
+ENGINEERING_BRANCHES = (
+    "Computer Engineering",
+    "Computer Science and Engineering",
+    "Information Technology",
+    "Artificial Intelligence and Data Science",
+    "Artificial Intelligence and Machine Learning",
+    "Electronics and Telecommunication Engineering",
+    "Electronics Engineering",
+    "Electrical Engineering",
+    "Mechanical Engineering",
+    "Civil Engineering",
+    "Chemical Engineering",
+    "Instrumentation Engineering",
+    "Production Engineering",
+    "Automobile Engineering",
+    "Bioengineering",
+)
+
+
 class SignUpForm(UserCreationForm):
     first_name = forms.CharField(max_length=150)
     last_name = forms.CharField(max_length=150)
@@ -32,9 +67,30 @@ class StudentProfileForm(forms.ModelForm):
             "jee_basis",
         )
         widgets = {
+            "city": forms.TextInput(
+                attrs={
+                    "list": "maharashtra-cities",
+                    "placeholder": "Choose or type a city",
+                    "autocomplete": "address-level2",
+                }
+            ),
+            "preferred_branch": forms.TextInput(
+                attrs={
+                    "list": "engineering-branches",
+                    "placeholder": "Choose or type a branch",
+                }
+            ),
             "hsc_percentage": forms.NumberInput(attrs={"min": "0", "max": "100", "step": "0.01"}),
-            "mht_cet_score": forms.NumberInput(attrs={"min": "0", "step": "0.001"}),
-            "jee_score": forms.NumberInput(attrs={"min": "0", "step": "0.001"}),
+            "mht_cet_score": forms.NumberInput(attrs={"min": "0", "step": "0.0000001"}),
+            "jee_score": forms.NumberInput(attrs={"min": "0", "step": "0.0000001"}),
+        }
+        labels = {
+            "mht_cet_basis": "MHT-CET score format",
+            "jee_basis": "JEE Main score format",
+        }
+        help_texts = {
+            "mht_cet_basis": "Select the same format as the score entered above.",
+            "jee_basis": "Select the same format as the score entered above.",
         }
 
     def clean(self):
@@ -64,8 +120,8 @@ class RecommendationFilterForm(forms.Form):
     year = forms.ChoiceField(required=False)
     city = forms.CharField(required=False, max_length=100)
     branch = forms.CharField(required=False, max_length=150)
-    min_cutoff = forms.DecimalField(required=False, min_value=0, max_digits=10, decimal_places=3)
-    max_cutoff = forms.DecimalField(required=False, min_value=0, max_digits=10, decimal_places=3)
+    min_cutoff = forms.DecimalField(required=False, min_value=0, max_digits=15, decimal_places=7)
+    max_cutoff = forms.DecimalField(required=False, min_value=0, max_digits=15, decimal_places=7)
 
     def __init__(self, *args, years=(), **kwargs):
         super().__init__(*args, **kwargs)

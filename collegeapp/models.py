@@ -24,6 +24,7 @@ class StudentProfile(models.Model):
     SCORE_BASES = [
         ("percentile", "Percentile"),
         ("rank", "Rank"),
+        ("score", "Score"),
     ]
 
     user = models.OneToOneField(
@@ -41,11 +42,11 @@ class StudentProfile(models.Model):
     city = models.CharField(max_length=100, blank=True)
     preferred_branch = models.CharField(max_length=150, blank=True)
     mht_cet_score = models.DecimalField(
-        max_digits=10, decimal_places=3, null=True, blank=True, validators=[MinValueValidator(0)]
+        max_digits=15, decimal_places=7, null=True, blank=True, validators=[MinValueValidator(0)]
     )
     mht_cet_basis = models.CharField(max_length=12, choices=SCORE_BASES, default="percentile")
     jee_score = models.DecimalField(
-        max_digits=10, decimal_places=3, null=True, blank=True, validators=[MinValueValidator(0)]
+        max_digits=15, decimal_places=7, null=True, blank=True, validators=[MinValueValidator(0)]
     )
     jee_basis = models.CharField(max_length=12, choices=SCORE_BASES, default="percentile")
 
@@ -118,7 +119,7 @@ class Cutoff(models.Model):
     exam = models.CharField(max_length=12, choices=EXAMS)
     score_basis = models.CharField(max_length=12, choices=SCORE_BASES)
     cutoff_score = models.DecimalField(
-        max_digits=10, decimal_places=3, validators=[MinValueValidator(0)]
+        max_digits=15, decimal_places=7, validators=[MinValueValidator(0)]
     )
     source_url = models.URLField(help_text="Official source document or data page.")
     source_notes = models.CharField(max_length=255, blank=True)

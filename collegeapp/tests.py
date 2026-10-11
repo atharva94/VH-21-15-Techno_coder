@@ -11,6 +11,12 @@ from django.test import TestCase
 from django.urls import reverse
 
 from .forms import RecommendationFilterForm, StudentProfileForm
+from .management.commands.import_mahacet_cutoffs import (
+    _layout_cells,
+    _layout_percentiles,
+    category_for_seat_type,
+    parse_ai_pages,
+)
 from .models import College, Cutoff, StudentProfile
 from .services import get_recommendations
 
@@ -71,6 +77,20 @@ class StudentFlowTests(TestCase):
         self.assertFalse(invalid_percentile.is_valid())
         self.assertIn("mht_cet_score", invalid_percentile.errors)
 
+        exam_score = StudentProfileForm(
+            data={
+                "full_name": "Sam Student",
+                "category": "OPEN",
+                "admission_pool": "AI",
+                "hsc_percentage": "82",
+                "mht_cet_score": "",
+                "mht_cet_basis": "percentile",
+                "jee_score": "84.8546239",
+                "jee_basis": "score",
+            }
+        )
+        self.assertTrue(exam_score.is_valid(), exam_score.errors)
+
     def test_student_can_save_profile(self):
         user = User.objects.create_user(username="profileuser", password="secret")
         StudentProfile.objects.create(
@@ -98,6 +118,18 @@ class StudentFlowTests(TestCase):
         profile = StudentProfile.objects.get(user=user)
         self.assertEqual(profile.city, "Pune")
         self.assertEqual(profile.mht_cet_score, Decimal("93.250"))
+
+    def test_profile_offers_city_and_branch_suggestions(self):
+        user = User.objects.create_user(username="suggestionsuser", password="secret")
+        self.client.login(username="suggestionsuser", password="secret")
+
+        response = self.client.get(reverse("index"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'list="maharashtra-cities"')
+        self.assertContains(response, '<option value="Pune">')
+        self.assertContains(response, 'list="engineering-branches"')
+        self.assertContains(response, '<option value="Computer Engineering">')
 
     def test_recommendations_compare_percentiles_and_filter_preferences(self):
         user = User.objects.create_user(username="samstudent", password="secret")
@@ -348,3 +380,111 @@ class StudentFlowTests(TestCase):
         with self.assertRaises(CommandError):
             call_command("import_cutoffs", invalid_path, stdout=StringIO())
         self.assertEqual(College.objects.count(), 1)
+
+
+class MahacetCutoffParserTests(TestCase):
+    def test_ai_parser_extracts_cutoff_rank_and_wrapped_course_name(self):
+        page_items = [
+            [
+                (55.4, -140.1, "1"),
+                (
+                    231.8,
+                    -138.4,
+                    "01101 - Shri Sant Gajanan Maharaj College of Engineering,Shegaon"
+                    "011012461018298 (84.8546239)",
+                ),
+                (784.2, -139.9, "AI"),
+                (716.3, -142.2, "AI to AI"),
+                (654.9, -142.8, "JEEElectronics and"),
+                (520.2, -150.6, "Telecommunication Engg"),
+            ]
+        ]
+
+        records = parse_ai_pages(page_items, "2026-27", 4)
+
+        self.assertEqual(len(records), 1)
+        self.assertEqual(records[0]["college_code"], "01101")
+        self.assertEqual(
+            records[0]["course_name"], "Electronics and Telecommunication Engg"
+        )
+        self.assertEqual(records[0]["exam"], "JEE Main")
+        self.assertEqual(records[0]["score_basis"], "score")
+        self.assertEqual(records[0]["cutoff_score"], 84.8546239)
+        self.assertIn("All India merit 18298", records[0]["source_notes"])
+        self.assertIn("JEE Main score 84.8546239", records[0]["source_notes"])
+
+    def test_ai_parser_uses_mht_cet_percentile_instead_of_merit_rank(self):
+        page_items = [
+            [
+                (55.4, -140.1, "1"),
+                (
+                    231.8,
+                    -138.4,
+                    "01101 - Example Engineering College"
+                    "011012461018298 (91.2500000)",
+                ),
+                (784.2, -139.9, "AI"),
+                (654.9, -142.8, "MHT-CETInformation Technology"),
+            ]
+        ]
+
+        record = parse_ai_pages(page_items, "2026-27", 4)[0]
+
+        self.assertEqual(record["exam"], "MHT-CET")
+        self.assertEqual(record["score_basis"], "percentile")
+        self.assertEqual(record["cutoff_score"], 91.25)
+
+    def test_mh_layout_parser_maps_aligned_cells_and_skips_special_seats(self):
+        headers = [
+            ("GOPENS", 10, "OPEN"),
+            ("GSEBCS", 30, "SEBC"),
+            ("TFWS", 50, None),
+        ]
+
+        ranks = _layout_cells(
+            "I       32404                 44969                 37480", 1, headers
+        )
+        scores = _layout_percentiles(
+            "        (92.3369677)         (89.2656035)         (91.0694792)", headers
+        )
+
+        self.assertEqual(category_for_seat_type("GOPENS"), "OPEN")
+        self.assertEqual(category_for_seat_type("GSEBCS"), "SEBC")
+        self.assertIsNone(category_for_seat_type("TFWS"))
+        self.assertEqual(ranks["GOPENS"], "32404")
+        self.assertEqual(scores["GOPENS"], 92.3369677)
+
+    def test_recommendations_match_official_jee_score_cutoffs(self):
+        user = User.objects.create_user(
+            username="jeescorestudent", password="Testpass-1234!"
+        )
+        profile = StudentProfile.objects.create(
+            user=user,
+            full_name="JEE Score Student",
+            category="OPEN",
+            admission_pool="AI",
+            hsc_percentage=80,
+            jee_score=Decimal("84.9000000"),
+            jee_basis="score",
+        )
+        college = College.objects.create(
+            institute_code="90001", name="JEE Score College", city="Pune"
+        )
+        cutoff = Cutoff.objects.create(
+            college=college,
+            course_name="Computer Engineering",
+            admission_year="2026-27",
+            cap_round=4,
+            admission_pool="AI",
+            category="OPEN",
+            seat_type="AI",
+            exam="JEE Main",
+            score_basis="score",
+            cutoff_score=Decimal("84.8546239"),
+            source_url="https://example.com/ai-cutoff.pdf",
+        )
+
+        results = get_recommendations(profile, admission_year="2026-27")
+
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0]["cutoff"], cutoff)
