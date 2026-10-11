@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+
+{% block title %}Recommendations | College Finder{% endblock %}
+
+{% block content %}
+<h1 class="h3">College matches</h1>
+<p class="text-muted">
+    Results use your {{ profile.category }} profile and the verified CAP cutoff records currently loaded into the system.
+    Matches are indicative only; admission is determined by the official counselling process.
+</p>
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3 align-items-end">
+            <div class="col-md-3">
+                <label class="form-label" for="{{ filters.year.id_for_label }}">Admission year</label>
+                {{ filters.year }}
+            </div>
+            <div class="col-md-2"><label class="form-label" for="{{ filters.city.id_for_label }}">City</label>{{ filters.city }}</div>
+            <div class="col-md-3"><label class="form-label" for="{{ filters.branch.id_for_label }}">Branch contains</label>{{ filters.branch }}</div>
+            <div class="col-md-2"><label class="form-label" for="{{ filters.min_cutoff.id_for_label }}">Minimum cutoff</label>{{ filters.min_cutoff }}</div>
+            <div class="col-md-2"><label class="form-label" for="{{ filters.max_cutoff.id_for_label }}">Maximum cutoff</label>{{ filters.max_cutoff }}</div>
+            <div class="col-12"><button class="btn btn-outline-primary" type="submit">Filter results</button> <a class="btn btn-link" href="{% url 'results' %}">Clear</a></div>
+        </form>
+        {% if filters.errors %}
+            <div class="alert alert-danger mt-3 mb-0">{{ filters.errors }}</div>
+        {% endif %}
+    </div>
+</div>
+
+{% if recommendations %}
+    <div class="row g-3">
+        {% for result in recommendations %}
+            <div class="col-lg-6">
+                <article class="card h-100 shadow-sm">
+                    <div class="card-body">
+                        <h2 class="h5"><a href="{% url 'college_detail' result.cutoff.college_id %}">{{ result.cutoff.college.name }}</a></h2>
+                        <p class="mb-1">{{ result.cutoff.college.city }}{% if result.cutoff.college.institute_code %} · Institute code {{ result.cutoff.college.institute_code }}{% endif %}</p>
+                        <p class="mb-2"><strong>{{ result.cutoff.course_name }}</strong></p>
+                        <dl class="row mb-2">
+                            <dt class="col-5">CAP year / round</dt><dd class="col-7">{{ result.cutoff.admission_year }} / {{ result.cutoff.cap_round }}</dd>
+                            <dt class="col-5">Admission pool</dt><dd class="col-7">{{ result.cutoff.get_admission_pool_display }}</dd>
+                            <dt class="col-5">Category</dt><dd class="col-7">{{ result.cutoff.get_category_display }}{% if result.cutoff.seat_type %} ({{ result.cutoff.seat_type }}){% endif %}</dd>
+                            <dt class="col-5">Entrance exam</dt><dd class="col-7">{{ result.exam }}</dd>
+                            <dt class="col-5">Cutoff</dt><dd class="col-7">{{ result.cutoff.cutoff_score }} {{ result.cutoff.get_score_basis_display }}</dd>
+                            <dt class="col-5">Your score</dt><dd class="col-7">{{ result.score }} {{ result.cutoff.get_score_basis_display }}</dd>
+                        </dl>
+                        <a href="{{ result.cutoff.source_url }}" target="_blank" rel="noopener noreferrer">View source cutoff</a>
+                    </div>
+                </article>
+            </div>
+        {% endfor %}
+    </div>
+{% else %}
+    <div class="alert alert-info">
+        No matching cutoff records are available for these filters. The project does not ship with unverified or sample cutoff scores.
+        Staff can load official CAP records from the Django admin or the documented CSV import command.
+        <a href="https://fe2026.mahacet.org/StaticPages/HomePage" target="_blank" rel="noopener noreferrer">Open the official 2026-27 CAP portal</a>.
+    </div>
+{% endif %}
+{% endblock %}

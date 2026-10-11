@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+
+{% block title %}{{ college.name }} | College Finder{% endblock %}
+
+{% block content %}
+<p><a href="{% url 'results' %}">&larr; Back to recommendations</a></p>
+<h1 class="h3">{{ college.name }}</h1>
+<p>{{ college.city }}{% if college.institute_code %} · Institute code {{ college.institute_code }}{% endif %}</p>
+{% if college.address %}<p>{{ college.address }}</p>{% endif %}
+{% if college.website %}<p><a href="{{ college.website }}" target="_blank" rel="noopener noreferrer">College website</a></p>{% endif %}
+
+<h2 class="h5 mt-4">Available cutoff records</h2>
+{% if cutoffs %}
+    <div class="table-responsive">
+        <table class="table table-striped">
+            <thead><tr><th>Year</th><th>Round</th><th>Pool</th><th>Course</th><th>Category</th><th>Exam</th><th>Cutoff</th><th>Source</th></tr></thead>
+            <tbody>
+            {% for cutoff in cutoffs %}
+                <tr>
+                    <td>{{ cutoff.admission_year }}</td><td>{{ cutoff.cap_round }}</td><td>{{ cutoff.get_admission_pool_display }}</td><td>{{ cutoff.course_name }}</td>
+                    <td>{{ cutoff.get_category_display }}{% if cutoff.seat_type %} ({{ cutoff.seat_type }}){% endif %}</td><td>{{ cutoff.exam }}</td>
+                    <td>{{ cutoff.cutoff_score }} {{ cutoff.get_score_basis_display }}</td>
+                    <td><a href="{{ cutoff.source_url }}" target="_blank" rel="noopener noreferrer">Official source</a></td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% else %}
+    <p>No cutoff records have been loaded for this college yet.</p>
+{% endif %}
+{% endblock %}
